@@ -20,13 +20,13 @@ function M.stop_lsps()
 
   for _, v in ipairs(clients) do
     table.insert(stopped_lsps, v.name)
-    vim.cmd.LspStop(v.name)
+    vim.lsp.stop_client(v.id)
   end
 end
 
 function M.start_stopped_lsps()
   for _, v in ipairs(stopped_lsps) do
-    vim.cmd.LspStart(v)
+    vim.lsp.enable(v)
   end
 end
 
