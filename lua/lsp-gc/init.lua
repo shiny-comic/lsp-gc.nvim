@@ -20,14 +20,16 @@ function M.stop_lsps()
 
   for _, v in ipairs(clients) do
     table.insert(stopped_lsps, v.name)
-    vim.lsp.stop_client(v.id)
+    vim.lsp.enable(v.name, false)
   end
 end
 
 function M.start_stopped_lsps()
   for _, v in ipairs(stopped_lsps) do
-    vim.lsp.enable(v)
+    vim.lsp.enable(v, true)
   end
+
+  vim.schedule(function() vim.cmd('doautocmd BufEnter') end)
 end
 
 function M.setup(opts)
