@@ -26,20 +26,21 @@ function M.stop_lsps()
   for _, v in ipairs(clients) do
     table.insert(stopped_lsps, v.name)
     vim.lsp.enable(v.name, false)
-    vim.notify(v.name .. "has stopped", vim.log.levels.INFO, { title = "lsp-gc" })
+    vim.notify(v.name .. " has stopped", vim.log.levels.INFO, { title = "lsp-gc" })
   end
 end
 
 function M.start_stopped_lsps()
   for _, v in ipairs(stopped_lsps) do
     vim.lsp.enable(v, true)
-    vim.notify("starting" .. v.name, vim.log.levels.INFO, { title = "lsp-gc" })
+    vim.notify("starting " .. v.name, vim.log.levels.INFO, { title = "lsp-gc" })
   end
 
   vim.schedule(function() vim.cmd('doautocmd BufEnter') end)
 end
 
 function setup_inactivity_timer()
+  vim.notify("setup_inactivity_timer execed", vim.log.levels.DEBUG, { title = "lsp-gc" })
   if need_startup then
     vim.schedule_wrap(M.start_stopped_lsps)
   end
