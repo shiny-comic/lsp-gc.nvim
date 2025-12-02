@@ -9,8 +9,13 @@ M.config = {
 
 local stopped_lsps = {}
 
+local inactivity_timer = nil
+
+local need_startup = false
+
 function M.stop_lsps()
   stopped_lsps = {}
+  need_startup = true
 
   local clients = vim.iter(vim.lsp.get_clients())
       :filter(function(c)
@@ -21,33 +26,36 @@ function M.stop_lsps()
   for _, v in ipairs(clients) do
     table.insert(stopped_lsps, v.name)
     vim.lsp.enable(v.name, false)
+    vim.notify(v.name .. "has stopped", vim.log.levels.INFO, { title = "lsp-gc" })
   end
 end
 
 function M.start_stopped_lsps()
   for _, v in ipairs(stopped_lsps) do
     vim.lsp.enable(v, true)
+    vim.notify("starting" .. v.name, vim.log.levels.INFO, { title = "lsp-gc" })
   end
 
   vim.schedule(function() vim.cmd('doautocmd BufEnter') end)
+end
+
+function setup_inactivity_timer()
+  if need_startup then
+    vim.schedule_wrap(M.start_stopped_lsps)
+  end
+  if inactivity_timer then
+    inactivity_timer:stop()
+  end
+  inactivity_timer = vim.uv.new_timer()
+  inactivity_timer:start(M.config.stop_after_ms, 0, vim.schedule_wrap(M.stop_lsps))
 end
 
 function M.setup(opts)
   opts = opts or {}
   M.config = vim.tbl_deep_extend("force", M.config, opts)
 
-  local timer = vim.uv.new_timer()
-
-  vim.api.nvim_create_autocmd("FocusLost", {
-    callback = function()
-      timer:start(M.config.stop_after_ms, 0, vim.schedule_wrap(M.stop_lsps))
-    end,
-  })
-  vim.api.nvim_create_autocmd("FocusGained", {
-    callback = vim.schedule_wrap(function()
-      timer:stop()
-      M.start_stopped_lsps()
-    end),
+  vim.api.nvim_create_autocmd({ "InsertEnter", "InsertLeave", "CursorMoved" }, {
+    callback = setup_inactivity_timer,
   })
 end
 
