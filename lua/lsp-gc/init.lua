@@ -40,9 +40,6 @@ function M.start_stopped_lsps()
 end
 
 function setup_inactivity_timer()
-  if inactivity_timer then
-    vim.notify(inactivity_timer:get_due_in() .. " seconds remain", vim.log.levels.DEBUG, { title = "lsp-gc" })
-  end
   if M.need_startup then
     vim.schedule_wrap(M.start_stopped_lsps)
   end
