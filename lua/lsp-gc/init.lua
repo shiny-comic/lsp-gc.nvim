@@ -11,11 +11,11 @@ local stopped_lsps = {}
 
 local inactivity_timer = nil
 
-local need_startup = false
+M.need_startup = false
 
 function M.stop_lsps()
   stopped_lsps = {}
-  need_startup = true
+  M.need_startup = true
 
   local clients = vim.iter(vim.lsp.get_clients())
       :filter(function(c)
@@ -40,13 +40,14 @@ function M.start_stopped_lsps()
 end
 
 function setup_inactivity_timer()
-  vim.notify("setup_inactivity_timer execed", vim.log.levels.DEBUG, { title = "lsp-gc" })
-  if need_startup then
+  vim.notify(inactivity_timer:get_due_in() .. " seconds remain", vim.log.levels.DEBUG, { title = "lsp-gc" })
+  if M.need_startup then
     vim.schedule_wrap(M.start_stopped_lsps)
   end
   if inactivity_timer then
     inactivity_timer:stop()
   end
+  M.need_startup = false
   inactivity_timer = vim.uv.new_timer()
   inactivity_timer:start(M.config.stop_after_ms, 0, vim.schedule_wrap(M.stop_lsps))
 end
@@ -55,7 +56,7 @@ function M.setup(opts)
   opts = opts or {}
   M.config = vim.tbl_deep_extend("force", M.config, opts)
 
-  vim.api.nvim_create_autocmd({ "InsertEnter", "InsertLeave", "CursorMoved" }, {
+  vim.api.nvim_create_autocmd({ "LspAttach", "InsertEnter", "InsertLeave", "CursorMoved" }, {
     callback = setup_inactivity_timer,
   })
 end
